@@ -431,3 +431,7 @@ body {
   border: 1px solid rgba(60,60,67,0.12) !important;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
 }
+
+/* User bubble code blocks need inverted colors in light theme */
+.msg-user pre { background: rgba(0,0,0,0.15) !important; color: #000 !important; }
+.msg-user code { background: rgba(0,0,0,0.12) !important; color: #000 !important; }

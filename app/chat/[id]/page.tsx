@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, use } from "react";
+import React, { useEffect, useRef, useState, use } from "react";
 import Link from "next/link";
 import type { Agent, ChatMessage } from "@/lib/types";
 
@@ -12,10 +12,136 @@ function timeStr(ts: number) {
 }
 
 function shouldShowAvatar(messages: ChatMessage[], index: number): boolean {
-  if (messages[index].role !== "assistant") return false;
   if (index === 0) return true;
-  return messages[index - 1].role === "user";
+  return messages[index - 1].role !== messages[index].role;
 }
+
+/* ── Markdown formatting ────────────────────────────────── */
+
+function inlineFormat(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\*\*(.+?)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
+  let last = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+
+    if (match[0].startsWith("**")) {
+      parts.push(<strong key={match.index} style={{ fontWeight: 700 }}>{match[2]}</strong>);
+    } else if (match[0].startsWith("`")) {
+      parts.push(
+        <code key={match.index} style={{
+          background: "rgba(0,0,0,0.35)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 5,
+          padding: "1px 5px",
+          fontSize: "0.88em",
+          fontFamily: "SF Mono, Menlo, monospace",
+        }}>{match[3]}</code>
+      );
+    } else if (match[0].startsWith("*")) {
+      parts.push(<em key={match.index} style={{ fontStyle: "italic", opacity: 0.85 }}>{match[4]}</em>);
+    }
+
+    last = match.index + match[0].length;
+  }
+
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length === 1 ? parts[0] : <>{parts}</>;
+}
+
+function formatMessage(content: string): React.ReactNode {
+  if (!content) return null;
+
+  const lines = content.split("\n");
+  const result: React.ReactNode[] = [];
+  let inCodeBlock = false;
+  let codeLines: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Fenced code block
+    if (line.startsWith("```")) {
+      if (!inCodeBlock) {
+        inCodeBlock = true;
+        codeLines = [];
+      } else {
+        inCodeBlock = false;
+        result.push(
+          <pre key={i} style={{
+            background: "rgba(0,0,0,0.4)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: 10,
+            padding: "10px 14px",
+            fontSize: 12,
+            fontFamily: "SF Mono, Menlo, monospace",
+            overflowX: "auto",
+            margin: "6px 0",
+            color: "#e2e8f0",
+            lineHeight: 1.6,
+          }}>
+            <code>{codeLines.join("\n")}</code>
+          </pre>
+        );
+        codeLines = [];
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeLines.push(line);
+      continue;
+    }
+
+    // Empty line = paragraph break
+    if (line.trim() === "") {
+      result.push(<div key={`space-${i}`} style={{ height: 6 }} />);
+      continue;
+    }
+
+    // Bullet list item
+    if (line.match(/^[-*] /)) {
+      result.push(
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 2 }}>
+          <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }}>•</span>
+          <span>{inlineFormat(line.slice(2))}</span>
+        </div>
+      );
+      continue;
+    }
+
+    // Numbered list
+    if (line.match(/^\d+\. /)) {
+      const num = line.match(/^(\d+)\. /)?.[1];
+      result.push(
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 2 }}>
+          <span style={{ color: "var(--accent)", flexShrink: 0, fontWeight: 600, minWidth: 16 }}>{num}.</span>
+          <span>{inlineFormat(line.replace(/^\d+\. /, ""))}</span>
+        </div>
+      );
+      continue;
+    }
+
+    // Heading
+    if (line.startsWith("### ")) {
+      result.push(<div key={i} style={{ fontWeight: 600, fontSize: 14, marginTop: 8, marginBottom: 2 }}>{inlineFormat(line.slice(4))}</div>);
+      continue;
+    }
+    if (line.startsWith("## ")) {
+      result.push(<div key={i} style={{ fontWeight: 700, fontSize: 15, marginTop: 10, marginBottom: 3 }}>{inlineFormat(line.slice(3))}</div>);
+      continue;
+    }
+
+    // Regular paragraph line
+    result.push(<div key={i} style={{ marginBottom: 1 }}>{inlineFormat(line)}</div>);
+  }
+
+  return <>{result}</>;
+}
+
+/* ── Component ──────────────────────────────────────────── */
 
 export default function ChatPage({
   params,
@@ -191,81 +317,92 @@ export default function ChatPage({
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      {/* --- Top agent color stripe --- */}
+      {/* --- Color stripe --- */}
       <div
         className="h-[3px] w-full flex-shrink-0"
         style={{ backgroundColor: agent.color }}
       />
 
-      {/* --- Header --- */}
-      <div
-        className="flex items-center justify-between flex-shrink-0 px-4"
-        style={{
-          height: 56,
-          background: "var(--material-regular)",
-          backdropFilter: "blur(40px) saturate(180%)",
-          WebkitBackdropFilter: "blur(40px) saturate(180%)",
-          borderBottom: "1px solid var(--separator)",
-        }}
-      >
-        {/* Left -- back link */}
-        <Link
-          href="/"
-          className="text-[15px] hover:opacity-80 transition-opacity flex-shrink-0"
-          style={{ color: "var(--system-blue)" }}
-        >
-          &#8249; Agents
-        </Link>
-
-        {/* Center -- agent identity */}
-        <div className="flex flex-col items-center min-w-0">
-          <span
-            className="text-[17px] font-semibold truncate"
-            style={{
-              color: "var(--text-primary)",
-              letterSpacing: "-0.3px",
-            }}
+      {/* --- Header (Messenger-style) --- */}
+      <div style={{
+        background: "var(--material-regular)",
+        backdropFilter: "blur(40px) saturate(180%)",
+        WebkitBackdropFilter: "blur(40px) saturate(180%)",
+        borderBottom: "1px solid var(--separator)",
+        flexShrink: 0,
+      }}>
+        {/* Top bar: back + clear */}
+        <div className="flex items-center justify-between px-4" style={{ height: 44 }}>
+          <Link
+            href="/"
+            className="text-[15px] hover:opacity-80 transition-opacity flex-shrink-0"
+            style={{ color: "var(--system-blue)" }}
           >
-            {agent.name}
-          </span>
-          <span
-            className="text-[12px] truncate"
-            style={{ color: "var(--text-secondary)" }}
+            &#8249; Agents
+          </Link>
+          <button
+            onClick={clearChat}
+            className="hover:opacity-70 transition-opacity"
+            style={{ color: "var(--text-tertiary)" }}
+            title="Clear conversation"
           >
-            {agent.title}
-          </span>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 5h14" />
+              <path d="M8 5V3.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V5" />
+              <path d="M5 5l1 12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-12" />
+              <path d="M8.5 9v5" />
+              <path d="M11.5 9v5" />
+            </svg>
+          </button>
         </div>
 
-        {/* Right -- clear/trash button */}
-        <button
-          onClick={clearChat}
-          className="hover:opacity-80 transition-opacity flex-shrink-0"
-          style={{ color: "var(--text-tertiary)" }}
-          title="Clear conversation"
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 5h14" />
-            <path d="M8 5V3.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V5" />
-            <path d="M5 5l1 12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-12" />
-            <path d="M8.5 9v5" />
-            <path d="M11.5 9v5" />
-          </svg>
-        </button>
+        {/* Agent identity — Messenger-style centered block */}
+        <div className="flex flex-col items-center pb-4 px-4 gap-2">
+          {/* Large avatar */}
+          <div style={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            background: `linear-gradient(135deg, ${agent.color}cc, ${agent.color}66)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 28,
+            boxShadow: `0 0 0 3px ${agent.color}33, 0 4px 16px rgba(0,0,0,0.4)`,
+            border: `2px solid ${agent.color}66`,
+          }}>
+            {agent.emoji}
+          </div>
+          {/* Name + title + active */}
+          <div className="text-center">
+            <div style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.3px" }}>
+              {agent.name}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 1 }}>
+              {agent.title}
+            </div>
+            {/* Active indicator */}
+            <div className="flex items-center justify-center gap-1.5 mt-1.5">
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--system-green)" }} />
+              <span style={{ fontSize: 11, color: "var(--system-green)" }}>Active</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* --- Messages --- */}
       <div
-        className="flex-1 overflow-y-auto space-y-1"
-        style={{ background: "#000", padding: 16 }}
+        className="flex-1 overflow-y-auto"
+        style={{ background: "#000", padding: "20px 16px 80px 16px" }}
       >
         {messages.map((msg, i) => {
           const isUser = msg.role === "user";
@@ -275,36 +412,57 @@ export default function ChatPage({
 
           return (
             <div key={i} className="animate-fade-in">
-              {/* Extra spacing before first message in a group */}
-              {i > 0 && messages[i - 1].role !== msg.role && (
-                <div className="h-3" />
-              )}
+              {/* Spacing: 16px between sender groups, 3px within same sender */}
+              <div style={{ height: i > 0 ? (messages[i - 1].role !== msg.role ? 16 : 3) : 0 }} />
 
               <div
                 className={`group flex items-end gap-2 ${
                   isUser ? "justify-end" : "justify-start"
                 }`}
               >
-                {/* Assistant avatar */}
+                {/* Assistant avatar column */}
                 {!isUser && (
-                  <div className="w-[28px] flex-shrink-0 mb-0.5">
+                  <div className="flex-shrink-0 flex flex-col items-center" style={{ width: 36 }}>
                     {showAvatar ? (
-                      <div
-                        className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-[13px]"
-                        style={{ backgroundColor: agent.color }}
-                      >
+                      <div style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: "50%",
+                        background: `linear-gradient(135deg, ${agent.color}cc, ${agent.color}66)`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 16,
+                        flexShrink: 0,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                        border: `1.5px solid ${agent.color}55`,
+                      }}>
                         {agent.emoji}
                       </div>
                     ) : (
-                      <div className="w-[28px]" />
+                      <div style={{ width: 36 }} />
                     )}
                   </div>
                 )}
 
-                {/* Bubble */}
-                <div className="max-w-[75%] flex flex-col">
+                {/* Bubble column */}
+                <div className="flex flex-col" style={{ maxWidth: "72%" }}>
+                  {/* Agent name label on first message of group */}
+                  {showAvatar && !isUser && (
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "var(--text-tertiary)", marginBottom: 3, marginLeft: 14 }}>
+                      {agent.name}
+                    </div>
+                  )}
+                  {/* "You" label on first user message of group */}
+                  {showAvatar && isUser && (
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "var(--text-tertiary)", marginBottom: 3, marginRight: 14, textAlign: "right" }}>
+                      You
+                    </div>
+                  )}
+
+                  {/* Bubble */}
                   <div
-                    className={`px-[14px] py-[10px] text-[15px] ${isUser ? 'msg-user' : 'msg-assistant'}`}
+                    className={`px-[14px] py-[10px] text-[15px] ${isUser ? "msg-user" : "msg-assistant"}`}
                     style={
                       isUser
                         ? {
@@ -324,7 +482,7 @@ export default function ChatPage({
                           }
                     }
                   >
-                    {msg.content}
+                    {formatMessage(msg.content)}
                     {isLastAssistant && !msg.content && (
                       <span
                         className="animate-blink"
