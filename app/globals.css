@@ -19,9 +19,57 @@
 }
 
 * { box-sizing: border-box; }
-body { background: #0a0a0f; color: #f5f5f7; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: #0a0a0f;
+  color: #f5f5f7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #f5c518;
+  color: #0a0a0f;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #262632; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #f5c518; }
+
+/* React Flow overrides */
 .react-flow__background { background: #0a0a0f !important; }
 .react-flow__minimap { background: #13131a !important; border: 1px solid #262632; border-radius: 8px; }
 .react-flow__controls { background: #13131a !important; border: 1px solid #262632 !important; border-radius: 8px; }
 .react-flow__controls-button { background: #13131a !important; border-color: #262632 !important; color: #f5f5f7 !important; }
 .react-flow__edge-path { opacity: 0.5; }
+
+/* Pulse animation for error indicators */
+@keyframes error-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-error-pulse {
+  animation: error-pulse 2s ease-in-out infinite;
+}
+
+/* Blinking cursor for streaming */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-blink {
+  animation: blink-cursor 1s step-end infinite;
+}
+
+/* Subtle float animation for empty state arrow */
+@keyframes float-hint {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-3px, -3px); }
+}
+.animate-float-hint {
+  animation: float-hint 2s ease-in-out infinite;
+}

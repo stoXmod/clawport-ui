@@ -26,6 +26,14 @@ function timeAgo(dateStr: string | null): string {
   return `${days}d ago`;
 }
 
+function getScheduleColor(schedule: string): string {
+  const s = schedule.toLowerCase();
+  if (s.includes("day") && !s.includes("days")) return "text-blue-400";
+  if (s.includes("week")) return "text-purple-400";
+  if (/every\s+\d+\s*day/i.test(s) || /\d+d/i.test(s)) return "text-orange-400";
+  return "text-[#86869b]";
+}
+
 type Filter = "all" | "ok" | "error" | "idle";
 
 export default function CronsPage() {
@@ -61,10 +69,12 @@ export default function CronsPage() {
   const counts = { ok: crons.filter((c) => c.status === "ok").length, error: crons.filter((c) => c.status === "error").length, idle: crons.filter((c) => c.status === "idle").length };
 
   const statusConfig = {
-    ok: { color: "bg-green-500", text: "text-green-400", label: "ok" },
-    error: { color: "bg-red-500", text: "text-red-400", label: "error" },
-    idle: { color: "bg-[#86869b]", text: "text-[#86869b]", label: "idle" },
+    ok: { color: "bg-green-500", label: "ok" },
+    error: { color: "bg-red-500 animate-error-pulse", label: "error" },
+    idle: { color: "bg-[#86869b]", label: "idle" },
   };
+
+  const statusBorderColors = { ok: "border-l-green-500", error: "border-l-red-500", idle: "border-l-[#86869b]" };
 
   return (
     <div className="h-full flex flex-col bg-[#0a0a0f] overflow-hidden">
@@ -72,7 +82,7 @@ export default function CronsPage() {
       <div className="border-b border-[#262632] bg-[#0d0d14] px-6 py-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <h1 className="font-bold text-white">⏰ Cron Monitor</h1>
-          <span className="bg-[#1a1a24] border border-[#262632] text-[#86869b] text-xs px-2 py-0.5 rounded-full">{crons.length}</span>
+          <span className="bg-[#1a1a24] border border-[#262632] text-[#86869b] text-xs font-mono px-2 py-0.5 rounded-full">{crons.length}</span>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-[#86869b]">Updated {timeAgo(lastRefresh.toISOString())}</span>
@@ -80,11 +90,32 @@ export default function CronsPage() {
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Summary — clickable counts */}
       <div className="px-6 py-3 border-b border-[#262632] flex items-center gap-6 flex-shrink-0">
-        <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500" /><span className="text-sm text-white">{counts.ok}</span><span className="text-xs text-[#86869b]">ok</span></div>
-        <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-500" /><span className="text-sm text-white">{counts.error}</span><span className="text-xs text-[#86869b]">errors</span></div>
-        <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#86869b]" /><span className="text-sm text-white">{counts.idle}</span><span className="text-xs text-[#86869b]">idle</span></div>
+        <button
+          onClick={() => setFilter(counts.ok > 0 ? "ok" : "all")}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
+          <span className="w-2 h-2 rounded-full bg-green-500" />
+          <span className="text-sm font-medium text-white">{counts.ok}</span>
+          <span className="text-xs text-[#86869b]">ok</span>
+        </button>
+        <button
+          onClick={() => setFilter(counts.error > 0 ? "error" : "all")}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-error-pulse" />
+          <span className="text-sm font-medium text-white">{counts.error}</span>
+          <span className="text-xs text-[#86869b]">errors</span>
+        </button>
+        <button
+          onClick={() => setFilter(counts.idle > 0 ? "idle" : "all")}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#86869b]" />
+          <span className="text-sm font-medium text-white">{counts.idle}</span>
+          <span className="text-xs text-[#86869b]">idle</span>
+        </button>
       </div>
 
       {/* Filter tabs */}
@@ -116,6 +147,7 @@ export default function CronsPage() {
                 <th className="text-left px-3 py-3 font-normal">Schedule</th>
                 <th className="text-left px-3 py-3 font-normal">Last Run</th>
                 <th className="text-left px-3 py-3 font-normal">Next Run</th>
+                <th className="w-6"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#262632]">
@@ -124,11 +156,10 @@ export default function CronsPage() {
                 const sc = statusConfig[cron.status];
                 const isExpanded = expanded === cron.id;
                 return (
-                  <>
+                  <tbody key={cron.id}>
                     <tr
-                      key={cron.id}
                       onClick={() => setExpanded(isExpanded ? null : cron.id)}
-                      className="hover:bg-[#13131a] cursor-pointer transition-colors"
+                      className={`group hover:bg-[#13131a] cursor-pointer transition-colors border-l-[3px] ${statusBorderColors[cron.status]}`}
                     >
                       <td className="px-6 py-3">
                         <span className={`inline-block w-2 h-2 rounded-full ${sc.color}`} />
@@ -148,13 +179,16 @@ export default function CronsPage() {
                           <span className="text-xs text-[#86869b]">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-3 font-mono text-xs text-[#86869b]">{cron.schedule}</td>
+                      <td className={`px-3 py-3 font-mono text-xs ${getScheduleColor(cron.schedule)}`}>{cron.schedule}</td>
                       <td className="px-3 py-3 text-xs text-[#86869b]">{timeAgo(cron.lastRun)}</td>
                       <td className="px-3 py-3 text-xs text-[#86869b]">{timeAgo(cron.nextRun)}</td>
+                      <td className="pr-4 py-3 text-[#86869b] opacity-0 group-hover:opacity-100 transition-opacity text-xs">
+                        ›
+                      </td>
                     </tr>
                     {isExpanded && (
-                      <tr key={`${cron.id}-expanded`} className="bg-[#0d0d14]">
-                        <td colSpan={6} className="px-6 py-3">
+                      <tr className={cron.status === "error" ? "bg-[#1a0a0a]" : "bg-[#0d0d14]"}>
+                        <td colSpan={7} className="px-6 py-3">
                           {cron.lastError && (
                             <div className="mb-2">
                               <span className="text-xs font-semibold text-red-400">Error: </span>
@@ -165,7 +199,7 @@ export default function CronsPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </tbody>
                 );
               })}
             </tbody>

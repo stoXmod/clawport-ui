@@ -21,9 +21,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="text-[#86869b] text-xs mt-0.5">Command Centre</div>
             </div>
             <NavLinks />
-            <div className="p-4 border-t border-[#262632]">
-              <div className="text-[#86869b] text-xs">v1.0 · Built by Jarvis</div>
-            </div>
           </aside>
           <main className="flex-1 overflow-hidden">{children}</main>
         </div>
