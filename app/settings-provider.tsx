@@ -5,6 +5,7 @@ import type { Agent } from '@/lib/types'
 import {
   type ManorSettings,
   type AgentOverride,
+  DEFAULTS,
   loadSettings,
   saveSettings,
   hexToAccentFill,
@@ -13,6 +14,7 @@ import {
 interface AgentDisplay {
   emoji: string
   profileImage?: string
+  emojiOnly?: boolean
 }
 
 interface SettingsContextValue {
@@ -22,6 +24,8 @@ interface SettingsContextValue {
   setManorSubtitle: (subtitle: string | null) => void
   setManorEmoji: (emoji: string | null) => void
   setManorIcon: (icon: string | null) => void
+  setIconBgHidden: (hidden: boolean) => void
+  setEmojiOnly: (emojiOnly: boolean) => void
   setAgentOverride: (agentId: string, override: AgentOverride) => void
   clearAgentOverride: (agentId: string) => void
   getAgentDisplay: (agent: Agent) => AgentDisplay
@@ -29,12 +33,14 @@ interface SettingsContextValue {
 }
 
 const SettingsContext = createContext<SettingsContextValue>({
-  settings: { accentColor: null, manorName: null, manorSubtitle: null, manorEmoji: null, manorIcon: null, agentOverrides: {} },
+  settings: { accentColor: null, manorName: null, manorSubtitle: null, manorEmoji: null, manorIcon: null, iconBgHidden: false, emojiOnly: false, agentOverrides: {} },
   setAccentColor: () => {},
   setManorName: () => {},
   setManorSubtitle: () => {},
   setManorEmoji: () => {},
   setManorIcon: () => {},
+  setIconBgHidden: () => {},
+  setEmojiOnly: () => {},
   setAgentOverride: () => {},
   clearAgentOverride: () => {},
   getAgentDisplay: (agent) => ({ emoji: agent.emoji }),
@@ -42,7 +48,13 @@ const SettingsContext = createContext<SettingsContextValue>({
 })
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<ManorSettings>(() => loadSettings())
+  // Initialize with defaults so server and client render the same HTML.
+  // Hydrate from localStorage after mount to avoid hydration mismatch.
+  const [settings, setSettings] = useState<ManorSettings>({ ...DEFAULTS })
+
+  useEffect(() => {
+    setSettings(loadSettings())
+  }, [])
 
   // Apply accent color CSS variables when settings change
   useEffect(() => {
@@ -96,6 +108,20 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     [settings, update],
   )
 
+  const setIconBgHidden = useCallback(
+    (hidden: boolean) => {
+      update({ ...settings, iconBgHidden: hidden })
+    },
+    [settings, update],
+  )
+
+  const setEmojiOnly = useCallback(
+    (emojiOnly: boolean) => {
+      update({ ...settings, emojiOnly })
+    },
+    [settings, update],
+  )
+
   const setAgentOverride = useCallback(
     (agentId: string, override: AgentOverride) => {
       const existing = settings.agentOverrides[agentId] || {}
@@ -124,9 +150,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       return {
         emoji: override?.emoji || agent.emoji,
         profileImage: override?.profileImage,
+        emojiOnly: settings.emojiOnly,
       }
     },
-    [settings.agentOverrides],
+    [settings.agentOverrides, settings.emojiOnly],
   )
 
   const resetAll = useCallback(() => {
@@ -136,6 +163,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       manorSubtitle: null,
       manorEmoji: null,
       manorIcon: null,
+      iconBgHidden: false,
+      emojiOnly: false,
       agentOverrides: {},
     }
     update(defaults)
@@ -150,6 +179,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setManorSubtitle,
         setManorEmoji,
         setManorIcon,
+        setIconBgHidden,
+        setEmojiOnly,
         setAgentOverride,
         clearAgentOverride,
         getAgentDisplay,

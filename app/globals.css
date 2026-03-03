@@ -219,8 +219,8 @@
   --separator-opaque: #C6C6C8;
   --text-primary: #000000;
   --text-secondary: rgba(60,60,67,0.60);
-  --text-tertiary: rgba(60,60,67,0.30);
-  --text-quaternary: rgba(60,60,67,0.18);
+  --text-tertiary: rgba(60,60,67,0.44);
+  --text-quaternary: rgba(60,60,67,0.30);
   --accent: #B8860B;
   --accent-fill: rgba(184,134,11,0.12);
   --system-blue: #007AFF;
@@ -267,8 +267,8 @@
     --separator-opaque: #C6C6C8;
     --text-primary: #000000;
     --text-secondary: rgba(60,60,67,0.60);
-    --text-tertiary: rgba(60,60,67,0.30);
-    --text-quaternary: rgba(60,60,67,0.18);
+    --text-tertiary: rgba(60,60,67,0.44);
+    --text-quaternary: rgba(60,60,67,0.30);
     --accent: #B8860B;
     --accent-fill: rgba(184,134,11,0.12);
     --system-blue: #007AFF;

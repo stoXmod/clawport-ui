@@ -11,17 +11,21 @@ export interface ManorSettings {
   manorSubtitle: string | null
   manorEmoji: string | null
   manorIcon: string | null // base64 data URL for custom icon image
+  iconBgHidden: boolean // hide colored background on sidebar logo
+  emojiOnly: boolean // show emoji avatars without colored background
   agentOverrides: Record<string, AgentOverride>
 }
 
 const STORAGE_KEY = 'manor-settings'
 
-const DEFAULTS: ManorSettings = {
+export const DEFAULTS: ManorSettings = {
   accentColor: null,
   manorName: null,
   manorSubtitle: null,
   manorEmoji: null,
   manorIcon: null,
+  iconBgHidden: false,
+  emojiOnly: false,
   agentOverrides: {},
 }
 
@@ -37,6 +41,8 @@ export function loadSettings(): ManorSettings {
       manorSubtitle: typeof parsed.manorSubtitle === 'string' ? parsed.manorSubtitle : null,
       manorEmoji: typeof parsed.manorEmoji === 'string' ? parsed.manorEmoji : null,
       manorIcon: typeof parsed.manorIcon === 'string' ? parsed.manorIcon : null,
+      iconBgHidden: typeof parsed.iconBgHidden === 'boolean' ? parsed.iconBgHidden : false,
+      emojiOnly: typeof parsed.emojiOnly === 'boolean' ? parsed.emojiOnly : false,
       agentOverrides:
         parsed.agentOverrides && typeof parsed.agentOverrides === 'object'
           ? parsed.agentOverrides

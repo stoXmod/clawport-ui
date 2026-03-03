@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from './providers';
 import { SettingsProvider } from './settings-provider';
 import { Sidebar } from '@/components/Sidebar';
+import { DynamicFavicon } from '@/components/DynamicFavicon';
 
 export const metadata: Metadata = {
   title: 'Manor -- Command Centre',
@@ -19,6 +20,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <SettingsProvider>
+            <DynamicFavicon />
             <div
               className="flex h-screen overflow-hidden"
               style={{ background: 'var(--bg)' }}

@@ -7,6 +7,8 @@ import type { Agent, CronJob } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ErrorState } from "@/components/ErrorState"
 import { AgentAvatar } from "@/components/AgentAvatar"
+import { GridView } from "@/components/GridView"
+import { FeedView } from "@/components/FeedView"
 
 const ManorMap = dynamic(
   () => import("@/components/ManorMap").then((m) => ({ default: m.ManorMap })),
@@ -95,6 +97,14 @@ function MapSkeleton() {
   )
 }
 
+type View = "map" | "grid" | "feed"
+
+const VIEW_OPTIONS: { key: View; label: string }[] = [
+  { key: "map", label: "Map" },
+  { key: "grid", label: "Grid" },
+  { key: "feed", label: "Feed" },
+]
+
 /* ──────────────────────────────────────────────
    Main page
    ────────────────────────────────────────────── */
@@ -105,6 +115,7 @@ export default function ManorPage() {
   const [selected, setSelected] = useState<Agent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [view, setView] = useState<View>("map")
   const closeRef = useRef<HTMLButtonElement>(null)
 
   const loadData = useCallback(() => {
@@ -168,77 +179,147 @@ export default function ManorPage() {
 
   return (
     <div className="flex h-full relative" style={{ background: "var(--bg)" }}>
-      {/* ── Map area ── */}
+      {/* ── Main content area ── */}
       <div className="flex-1 h-full relative">
         {loading ? (
           <MapSkeleton />
-        ) : (
+        ) : view === "map" ? (
           <ManorMap
             agents={agents}
             crons={crons}
             selectedId={selected?.id ?? null}
             onNodeClick={setSelected}
           />
+        ) : view === "grid" ? (
+          <GridView
+            agents={agents}
+            crons={crons}
+            selectedId={selected?.id ?? null}
+            onSelect={setSelected}
+          />
+        ) : (
+          <FeedView
+            agents={agents}
+            crons={crons}
+            selectedId={selected?.id ?? null}
+            onSelect={setSelected}
+          />
         )}
 
-        {/* Legend -- top right */}
+        {/* View switcher -- top left */}
         <div
           className="hidden md:flex"
           style={{
             position: "absolute",
             top: "var(--space-4)",
-            right: "var(--space-4)",
+            left: "var(--space-4)",
             zIndex: 10,
             display: "flex",
             alignItems: "center",
-            gap: "var(--space-4)",
-            padding: "var(--space-2) var(--space-3)",
+            gap: 2,
+            padding: 3,
             borderRadius: "var(--radius-sm)",
             background: "var(--material-regular)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid var(--separator)",
-            fontSize: "var(--text-caption2)",
-            color: "var(--text-tertiary)",
           }}
         >
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "var(--system-green)",
-                display: "inline-block",
-              }}
-            />
-            Healthy
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "var(--system-red)",
-                display: "inline-block",
-              }}
-            />
-            Errors
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "var(--text-tertiary)",
-                display: "inline-block",
-              }}
-            />
-            No crons
-          </span>
+          {VIEW_OPTIONS.map((opt) => {
+            const isActive = view === opt.key
+            return (
+              <button
+                key={opt.key}
+                onClick={() => setView(opt.key)}
+                className="focus-ring"
+                aria-label={`${opt.label} view`}
+                aria-pressed={isActive}
+                style={{
+                  padding: "5px 14px",
+                  borderRadius: "var(--radius-sm)",
+                  fontSize: "var(--text-caption1)",
+                  fontWeight: "var(--weight-medium)",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 200ms var(--ease-smooth)",
+                  ...(isActive
+                    ? {
+                        background: "var(--accent-fill)",
+                        color: "var(--accent)",
+                        boxShadow: "0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent)",
+                      }
+                    : {
+                        background: "transparent",
+                        color: "var(--text-secondary)",
+                      }),
+                }}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
         </div>
+
+        {/* Legend -- top right (map view only) */}
+        {view === "map" && (
+          <div
+            className="hidden md:flex"
+            style={{
+              position: "absolute",
+              top: "var(--space-4)",
+              right: "var(--space-4)",
+              zIndex: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--space-4)",
+              padding: "var(--space-2) var(--space-3)",
+              borderRadius: "var(--radius-sm)",
+              background: "var(--material-regular)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid var(--separator)",
+              fontSize: "var(--text-caption2)",
+              color: "var(--text-tertiary)",
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "var(--system-green)",
+                  display: "inline-block",
+                }}
+              />
+              Healthy
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "var(--system-red)",
+                  display: "inline-block",
+                }}
+              />
+              Errors
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "var(--text-tertiary)",
+                  display: "inline-block",
+                }}
+              />
+              No crons
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ── Mobile backdrop ── */}
@@ -253,13 +334,20 @@ export default function ManorPage() {
       {/* ── Detail panel ── */}
       {selected && (
         <div
-          className="fixed inset-0 z-40 md:absolute md:inset-y-0 md:right-0 md:left-auto md:z-30 panel-slide-in"
+          className="panel-slide-in"
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 30,
+          }}
         >
           <div
-            className="h-full flex flex-col ml-auto"
+            className="h-full flex flex-col"
             style={{
-              width: "100%",
-              maxWidth: 380,
+              width: 380,
+              maxWidth: "100vw",
               flexShrink: 0,
               overflowY: "auto",
               background: "var(--bg)",

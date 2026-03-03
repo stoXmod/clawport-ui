@@ -31,6 +31,8 @@ describe('loadSettings', () => {
       manorSubtitle: null,
       manorEmoji: null,
       manorIcon: null,
+      iconBgHidden: false,
+      emojiOnly: false,
       agentOverrides: {},
     })
   })
@@ -83,6 +85,8 @@ describe('saveSettings', () => {
       manorSubtitle: null,
       manorEmoji: null,
       manorIcon: null,
+      iconBgHidden: false,
+      emojiOnly: false,
       agentOverrides: {},
     }
     saveSettings(settings)
@@ -99,6 +103,8 @@ describe('saveSettings', () => {
       manorSubtitle: 'Ops Center',
       manorEmoji: '🏠',
       manorIcon: 'data:image/png;base64,test',
+      iconBgHidden: false,
+      emojiOnly: false,
       agentOverrides: {
         vera: { emoji: '🧙', profileImage: 'data:image/jpeg;base64,abc' },
       },

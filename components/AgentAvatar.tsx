@@ -39,7 +39,7 @@ export function AgentAvatar({ agent, size, borderRadius, style }: AgentAvatarPro
         width: size,
         height: size,
         borderRadius: radius,
-        background: `${agent.color}20`,
+        background: display.emojiOnly ? 'transparent' : `${agent.color}20`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

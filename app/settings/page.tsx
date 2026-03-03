@@ -65,6 +65,8 @@ export default function SettingsPage() {
     setManorSubtitle,
     setManorEmoji,
     setManorIcon,
+    setIconBgHidden,
+    setEmojiOnly,
     setAgentOverride,
     clearAgentOverride,
     resetAll,
@@ -323,7 +325,7 @@ export default function SettingsPage() {
 
             <div style={{ borderTop: '1px solid var(--separator)' }} />
 
-            {/* Icon — emoji or image */}
+            {/* Logo / Icon — emoji or image */}
             <div style={{ padding: 'var(--space-3) var(--space-4)' }}>
               <label
                 style={{
@@ -333,7 +335,7 @@ export default function SettingsPage() {
                   marginBottom: 'var(--space-2)',
                 }}
               >
-                Icon
+                Logo / Icon
               </label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                 {/* Live preview */}
@@ -356,14 +358,16 @@ export default function SettingsPage() {
                       width: 36,
                       height: 36,
                       borderRadius: 10,
-                      background: settings.accentColor
-                        ? `linear-gradient(135deg, ${settings.accentColor}, ${settings.accentColor}dd)`
-                        : 'linear-gradient(135deg, #f5c518, #e8b800)',
-                      boxShadow: 'var(--shadow-card)',
+                      background: settings.iconBgHidden
+                        ? 'transparent'
+                        : settings.accentColor
+                          ? `linear-gradient(135deg, ${settings.accentColor}, ${settings.accentColor}dd)`
+                          : 'linear-gradient(135deg, #f5c518, #e8b800)',
+                      boxShadow: settings.iconBgHidden ? 'none' : 'var(--shadow-card)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: 18,
+                      fontSize: settings.iconBgHidden ? 28 : 18,
                       flexShrink: 0,
                     }}
                   >
@@ -447,6 +451,125 @@ export default function SettingsPage() {
                   </button>
                 )}
               </div>
+
+              {/* Hide background toggle — only relevant when no uploaded image */}
+              {!settings.manorIcon && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginTop: 'var(--space-3)',
+                    paddingTop: 'var(--space-3)',
+                    borderTop: '1px solid var(--separator)',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 'var(--text-footnote)',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    Hide background
+                  </span>
+                  <button
+                    role="switch"
+                    aria-checked={settings.iconBgHidden}
+                    onClick={() => setIconBgHidden(!settings.iconBgHidden)}
+                    className="focus-ring"
+                    style={{
+                      width: 51,
+                      height: 31,
+                      borderRadius: 16,
+                      background: settings.iconBgHidden ? 'var(--system-green)' : 'var(--fill-primary)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      flexShrink: 0,
+                      transition: 'background 200ms var(--ease-smooth)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 2,
+                        left: settings.iconBgHidden ? 22 : 2,
+                        width: 27,
+                        height: 27,
+                        borderRadius: '50%',
+                        background: '#fff',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                        transition: 'left 200ms var(--ease-spring)',
+                      }}
+                    />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--separator)' }} />
+
+            {/* Emoji-only avatar toggle */}
+            <div
+              style={{
+                padding: 'var(--space-3) var(--space-4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 'var(--space-3)',
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 'var(--text-body)',
+                    fontWeight: 'var(--weight-medium)',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  Emoji Only Avatars
+                </div>
+                <div
+                  style={{
+                    fontSize: 'var(--text-caption1)',
+                    color: 'var(--text-tertiary)',
+                    marginTop: 1,
+                  }}
+                >
+                  Show emoji without colored background
+                </div>
+              </div>
+              <button
+                role="switch"
+                aria-checked={settings.emojiOnly}
+                onClick={() => setEmojiOnly(!settings.emojiOnly)}
+                className="focus-ring"
+                style={{
+                  width: 51,
+                  height: 31,
+                  borderRadius: 16,
+                  background: settings.emojiOnly ? 'var(--system-green)' : 'var(--fill-primary)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  flexShrink: 0,
+                  transition: 'background 200ms var(--ease-smooth)',
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    left: settings.emojiOnly ? 22 : 2,
+                    width: 27,
+                    height: 27,
+                    borderRadius: '50%',
+                    background: '#fff',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                    transition: 'left 200ms var(--ease-spring)',
+                  }}
+                />
+              </button>
             </div>
           </div>
         </section>

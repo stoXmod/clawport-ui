@@ -56,14 +56,16 @@ export function Sidebar() {
                   width: '36px',
                   height: '36px',
                   borderRadius: '10px',
-                  background: settings.accentColor
-                    ? `linear-gradient(135deg, ${settings.accentColor}, ${settings.accentColor}dd)`
-                    : 'linear-gradient(135deg, #f5c518, #e8b800)',
-                  boxShadow: 'var(--shadow-card)',
+                  background: settings.iconBgHidden
+                    ? 'transparent'
+                    : settings.accentColor
+                      ? `linear-gradient(135deg, ${settings.accentColor}, ${settings.accentColor}dd)`
+                      : 'linear-gradient(135deg, #f5c518, #e8b800)',
+                  boxShadow: settings.iconBgHidden ? 'none' : 'var(--shadow-card)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '18px',
+                  fontSize: settings.iconBgHidden ? '28px' : '18px',
                   flexShrink: 0,
                 }}
               >
